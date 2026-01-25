@@ -1,0 +1,29 @@
+package DesignParkingLot.park;
+
+import DesignParkingLot.Floor;
+import DesignParkingLot.ParkingSpot;
+import DesignParkingLot.VechicleType;
+
+import java.util.*;
+
+public class NearestExitParkingStrategy implements ParkingStrategy {
+
+    private static Map<VechicleType, List<VechicleType>> acceptedParkingTypes = Map.of(
+            VechicleType.BIKE, Arrays.asList(VechicleType.BIKE, VechicleType.CAR),
+            VechicleType.CAR, List.of(VechicleType.CAR),
+            VechicleType.EV, List.of(VechicleType.EV)
+    );
+
+    @Override
+    public Optional<ParkingSpot> getParkingSpot(VechicleType vechicleType, List<Floor> parkingFloors) {
+        return parkingFloors.stream().map(Floor::getParkingSpots)
+                .flatMap(Collection::stream)
+                .sorted((a, b) -> {
+                    if (a.getFloorNo() == b.getFloorNo()) {
+                        return Integer.compare(a.getDistanceFromExit(), b.getDistanceFromExit());
+                    } else return Integer.compare(a.getFloorNo(), b.getFloorNo());
+                })
+                .filter(spot -> spot.isVacant() &&
+                        acceptedParkingTypes.get(vechicleType).contains(spot.getVechicleType())).findFirst();
+    }
+}
