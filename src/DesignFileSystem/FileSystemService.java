@@ -1,40 +1,44 @@
 package DesignFileSystem;
 
 public class FileSystemService {
-    String path;
     FileSystemManager fileSystemManager;
+    Directory directory;
 
     public FileSystemService() {
-        path = "";
         fileSystemManager = FileSystemManager.getInstance();
+        directory = fileSystemManager.getRoot();
     }
 
     public void pwd() {
-        System.out.println(path);
+        System.out.println(fileSystemManager.getPath(directory));
     }
 
     public void ls() {
-        System.out.println(fileSystemManager.getContents(path));
+        System.out.println(fileSystemManager.getContents(directory));
     }
 
     public void cd(String arg) {
+        Directory dir;
         if ("".equals(arg.split("/")[0])) {
-            path = fileSystemManager.getOptimalPath(arg);
-            System.out.println(fileSystemManager.getContents(arg));
+            dir = fileSystemManager.traverseFromNode(fileSystemManager.getRoot(), "." + arg);
         } else {
-            path = fileSystemManager.getOptimalPath(path + "/" + arg);
-            System.out.println(fileSystemManager.getContents(arg));
+            dir = fileSystemManager.traverseFromNode(directory, arg);
         }
+        if (dir == null) {
+            System.out.println("Invalid path: " + arg);
+            return;
+        }
+        this.directory = dir;
     }
 
     public void mkdir(String dirName) {
-        boolean isCreated = fileSystemManager.createDirectory(dirName, path);
+        boolean isCreated = fileSystemManager.createDirectory(directory, dirName);
         if (isCreated) System.out.println(dirName + " directory created successfully");
         else System.out.println(dirName + " directory creation failed");
     }
 
     public void touch(String fileName) {
-        boolean isCreated = fileSystemManager.createFile(fileName, path);
+        boolean isCreated = fileSystemManager.createFile(directory, fileName);
         if (isCreated) System.out.println(fileName + " file created successfully");
         else System.out.println(fileName + " file creation failed");
     }
@@ -50,6 +54,6 @@ public class FileSystemService {
         fs.pwd(); // Should show: /home/user
         fs.cd("./../../home/../home/user/..");
         fs.pwd(); // Should show: /home
-        fs.ls();
+        fs.ls(); // Should show: user
     }
 }

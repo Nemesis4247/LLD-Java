@@ -1,5 +1,7 @@
 package DesignFileSystem;
 
+import lombok.Getter;
+
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,12 +25,23 @@ public class FileSystemManager {
         return instance;
     }
 
-    public boolean createDirectory(String dirName, String path) {
+    public Directory getRoot() {
+        readWriteLock.readLock().lock();
+        try {
+            return this.root;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            readWriteLock.readLock().unlock();
+        }
+
+    }
+
+    public boolean createDirectory(Directory node, String dirName) {
         readWriteLock.writeLock().lock();
         try {
-            Directory node = traverse(path);
-            if (node == null) return false;
-            if (!node.getType().equals(Type.DIR)) return false;
+            if (node == null) throw new NullPointerException("Arg Directory cannot be null");
+            if (node.getChildren().containsKey(dirName)) return false;
             Directory newDir = new Directory(dirName, node);
             node.addNode(newDir);
             return true;
@@ -40,12 +53,11 @@ public class FileSystemManager {
 
     }
 
-    public boolean createFile(String fileName, String path) {
+    public boolean createFile(Directory node, String fileName) {
         readWriteLock.writeLock().lock();
         try {
-            Directory node = traverse(path);
             if (node == null) return false;
-            if (!node.getType().equals(Type.DIR)) return false;
+            if (node.getChildren().containsKey(fileName)) return false;
             File file = new File(fileName);
             node.addNode(file);
             return true;
@@ -56,18 +68,16 @@ public class FileSystemManager {
         }
     }
 
-    public List<String> getContents(String path) {
+    public List<String> getContents(Directory dir) {
         readWriteLock.readLock().lock();
         try {
-            Directory node = traverse(path);
-            if (node == null) return Collections.emptyList();
-            if (!node.getType().equals(Type.DIR)) return Collections.emptyList();
+            if (dir == null) throw new NullPointerException("Arg Directory cannot be null");
             List<String> ans = new ArrayList<>();
-            for (String child : node.getChildren().keySet()) {
-                if (!child.equals(".") && !child.equals("..")) {
-                    ans.add(node.getChildren().get(child).getName());
+            dir.getChildren().forEach((name, fs) -> {
+                if (!name.equals(".") && !name.equals("..")) {
+                    ans.add(fs.getName());
                 }
-            }
+            });
             return ans;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -76,19 +86,17 @@ public class FileSystemManager {
         }
     }
 
-    public String getOptimalPath(String path) {
+    public String getPath(Directory directory) {
         readWriteLock.readLock().lock();
         try {
-            Directory node = traverse(path);
-            if (node == null) return null;
-            if (!node.getType().equals(Type.DIR)) return null;
-            String ans = "";
-            Directory curr = node;
+            if (directory == null) throw new NullPointerException("Arg Directory cannot be null");
+            StringBuilder ans = new StringBuilder();
+            Directory curr = directory;
             while (!"".equals(curr.getName())) {
-                ans = "/" + curr.getName() + ans;
+                ans.insert(0, "/" + curr.getName());
                 curr = (Directory) curr.getChildren().get("..");
             }
-            return ans;
+            return ans.toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -96,16 +104,23 @@ public class FileSystemManager {
         }
     }
 
-    private Directory traverse(String path) {
-        String[] nodes = path.split("/");
-        Directory curr = root;
-        for (int i = 1; i < nodes.length; i++) {
-            if (curr.getChildren().containsKey(nodes[i]) && curr.getChildren().get(nodes[i]).getType().equals(Type.DIR)) {
-                curr = (Directory) curr.getChildren().get(nodes[i]);
-            } else {
-                return null;
+    public Directory traverseFromNode(Directory directory, String path) {
+        readWriteLock.readLock().lock();
+        try {
+            String[] nodes = path.split("/");
+            Directory curr = directory;
+            for (String node : nodes) {
+                if (curr.getChildren().containsKey(node) && curr.getChildren().get(node).getType().equals(Type.DIR)) {
+                    curr = (Directory) curr.getChildren().get(node);
+                } else {
+                    return null;
+                }
             }
+            return curr;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            readWriteLock.readLock().unlock();
         }
-        return curr;
     }
 }

@@ -26,9 +26,9 @@ public class ScanRequestHandler implements RequestHandlingStrategy {
     @Override
     public int getNextStop(ElevatorCar elevatorCar) { // todo: fix
         if (!Direction.DOWN.equals(elevatorCar.getDirection()) && !upQueue.isEmpty()) {
-            return upQueue.poll();
+            return upQueue.pollFirst();
         } else if (Direction.DOWN.equals(elevatorCar.getDirection()) && !downQueue.isEmpty()) {
-            return downQueue.poll();
+            return downQueue.pollFirst();
         } else {
             return elevatorCar.getFloor();
         }

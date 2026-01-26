@@ -1,7 +1,10 @@
 package DesignFileSystem;
 
+import lombok.Setter;
+
 public class File extends FileSystemNode {
     FileMetadata metadata;
+    @Setter
     byte[] content;
 
 
@@ -10,6 +13,6 @@ public class File extends FileSystemNode {
         String[] fileWithExtension = name.split("\\.");
         String extension = fileWithExtension.length == 1 ? null : fileWithExtension[1];
         this.metadata = new FileMetadata(extension);
-        content = "new byte[0]".getBytes();
+        content = new byte[0];
     }
 }
