@@ -18,12 +18,12 @@ public class NearestExitParkingStrategy implements ParkingStrategy {
     public Optional<ParkingSpot> getParkingSpot(VechicleType vechicleType, List<Floor> parkingFloors) {
         return parkingFloors.stream().map(Floor::getParkingSpots)
                 .flatMap(Collection::stream)
+                .filter(spot -> spot.isVacant() &&
+                        acceptedParkingTypes.get(vechicleType).contains(spot.getVechicleType()))
                 .sorted((a, b) -> {
                     if (a.getFloorNo() == b.getFloorNo()) {
                         return Integer.compare(a.getDistanceFromExit(), b.getDistanceFromExit());
                     } else return Integer.compare(a.getFloorNo(), b.getFloorNo());
-                })
-                .filter(spot -> spot.isVacant() &&
-                        acceptedParkingTypes.get(vechicleType).contains(spot.getVechicleType())).findFirst();
+                }).findFirst();
     }
 }
